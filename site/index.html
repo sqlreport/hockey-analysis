@@ -25,9 +25,16 @@
 <main>
   <section id="viz">
     <h2>Positional heatmap <small id="hmnote"></small></h2>
-    <canvas id="rink" width="720" height="360"></canvas>
+    <svg id="rink" viewBox="0 0 60 30" preserveAspectRatio="xMidYMid meet"
+         role="img" aria-label="positional heatmap on a 60 by 30 m rink">
+      <defs><clipPath id="board"><rect x="0" y="0" width="60" height="30" rx="2"/></clipPath></defs>
+      <g id="heat" transform="translate(0 30) scale(1 -1)" clip-path="url(#board)" fill-rule="evenodd"></g>
+      <g id="lines" transform="translate(0 30) scale(1 -1)"></g>
+    </svg>
+    <div id="hmlegend"><span>low</span><i></i><span>high</span></div>
     <p class="hint">rink is 60 &times; 30 m; colour = seconds a skater occupied each 0.5 m cell,
-      binned from <code>heatmaps/*.grid.json</code> (or <code>*_points.csv</code> for a single player)</p>
+      drawn as marching-squares contour <code>&lt;path&gt;</code>s (fill-rule evenodd) over
+      <code>heatmaps/*.grid.json</code> (or <code>*_points.csv</code> for a single player)</p>
     <div id="units"></div>
   </section>
 

@@ -46,31 +46,17 @@ function writeUrl(){
 // ---------- boot ----------
 (async function(){
   readUrl();
+  buildRinkLines();
   const idx = await (await fetch(`${DATA}/games.json`)).json();
   const g=$("#game");
-  const games = idx.games || [];
-
-  if (!games.length){
-    g.innerHTML = '<option value="">No games available</option>';
-    g.disabled = true;
-    $("#score").textContent = "No game data";
-    $("#evcount").textContent = "(0/0)";
-    clearRink();
-    return;
-  }
-
-  games.forEach(x=>{ const o=document.createElement("option"); o.value=x.dir; o.textContent=x.label; g.append(o); });
-  g.value = sel.game && games.some(x=>x.dir===sel.game) ? sel.game : games[0].dir;
+  idx.games.forEach(x=>{ const o=document.createElement("option"); o.value=x.dir; o.textContent=x.label; g.append(o); });
+  g.value = sel.game && idx.games.some(x=>x.dir===sel.game) ? sel.game : idx.games[0].dir;
   g.onchange = ()=>{ sel.game=g.value; sel.player=""; POINTS=null; loadGame(); };
   await loadGame();
 })();
 
 async function loadGame(){
-  const g=$("#game");
-  if (!g || g.disabled || !g.value){
-    GAME = null; EVENTS = []; $("#score").textContent = "No game data"; return;
-  }
-  sel.game = g.value;
+  sel.game = $("#game").value;
   GAME  = await (await fetch(`${DATA}/${sel.game}/game.json`)).json();
   EVENTS = csv(await (await fetch(`${DATA}/${sel.game}/events.csv`)).text());
   $("#score").textContent = GAME.score ? `${GAME.away} ${GAME.score} ${GAME.home}` : "";
@@ -151,26 +137,43 @@ function renderUnits(){
   });
 }
 
-// heatmap: prefer the pre-baked grid for the current team; if a single player is
-// selected and a *_points.csv exists, bin that live.
+// heatmap source, in priority order:
+//   single player   -> bin *_points.csv live (period/team/name filtered)
+//   a period picked  -> pre-baked p<N>_full_<team>.grid.json, else bin points.csv
+//   otherwise        -> pre-baked whole-game grid for the team (game_<team>.grid.json)
 async function renderHeatmap(){
   const hm = GAME.assets.heatmaps || [];
   const teamKey = sel.team ? sel.team.toLowerCase() : "all";
-  const grid = hm.find(a=>a.path.endsWith(`_${teamKey}.grid.json`)) || hm.find(a=>a.path.endsWith("_all.grid.json"));
-  const ptsAsset = hm.find(a=>a.path.endsWith("_points.csv"));
+  const ptsAsset   = hm.find(a=>a.path.endsWith("_points.csv"));
+  const periodGrid = sel.period!=="all" &&
+    hm.find(a=>a.path.endsWith(`p${sel.period}_full_${teamKey}.grid.json`));
+  const wholeGrid  = hm.find(a=>a.path.endsWith(`_${teamKey}.grid.json`)) ||
+                     hm.find(a=>a.path.endsWith("_all.grid.json"));
+  const loadJson = p => fetch(`${DATA}/${sel.game}/${p}`).then(r=>r.json());
+  const loadPoints = async () => { if (!POINTS) POINTS = csv(await (await fetch(`${DATA}/${sel.game}/${ptsAsset.path}`)).text()); };
   let G, note;
 
-  if (sel.player && ptsAsset){
-    if (!POINTS) POINTS = csv(await (await fetch(`${DATA}/${sel.game}/${ptsAsset.path}`)).text());
+  if (sel.player){
+    if (!ptsAsset){ $("#hmnote").textContent=" — no point cloud in this export"; clearRink(); return; }
+    await loadPoints();
     G = binPoints(POINTS);
-    note = `${sel.player} · ${G.n} samples (binned from points.csv)`;
-  } else if (grid){
-    const j = await (await fetch(`${DATA}/${sel.game}/${grid.path}`)).json();
+    note = G.n ? `${sel.player} · ${G.n} samples (points.csv)`
+               : `${sel.player} — no per-player points (jersey identity not run on the full-game export)`;
+  } else if (periodGrid){
+    const j = await loadJson(periodGrid.path);
     G = { nx:j.nx, ny:j.ny, max:j.max, data:j.grid, n:j.n };
-    note = `${grid.path.split("/").pop()} · ${j.n} samples`;
-  } else { $("#hmnote").textContent="(no heatmap data)"; clearRink(); return; }
+    note = `${periodGrid.path.split("/").pop()} · ${j.n} samples`;
+  } else if (sel.period!=="all" && ptsAsset){
+    await loadPoints();
+    G = binPoints(POINTS);
+    note = `P${sel.period}${sel.team?" · "+sel.team:""} · ${G.n} samples (points.csv)`;
+  } else if (wholeGrid){
+    const j = await loadJson(wholeGrid.path);
+    G = { nx:j.nx, ny:j.ny, max:j.max, data:j.grid, n:j.n };
+    note = `${wholeGrid.path.split("/").pop()} · ${j.n} samples`;
+  } else { $("#hmnote").textContent=" — no heatmap data"; clearRink(); return; }
 
-  $("#hmnote").textContent = "— " + note;
+  $("#hmnote").textContent = " — " + note;
   paint(G);
 }
 
@@ -207,29 +210,87 @@ function inferno(v){ // compact inferno-ish ramp
   return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
 }
 
-function paint(G){
-  const cv=$("#rink"), ctx=cv.getContext("2d"), W=cv.width, H=cv.height;
-  const img=ctx.createImageData(W,H);
-  for (let py=0;py<H;py++) for (let px=0;px<W;px++){
-    const gx=Math.min(G.nx-1,(px/W*G.nx)|0), gy=Math.min(G.ny-1,((1-py/H)*G.ny)|0);
-    const v=G.data[gy*G.nx+gx]/G.max, [r,g,b]=inferno(v), o=(py*W+px)*4;
-    img.data[o]=r; img.data[o+1]=g; img.data[o+2]=b; img.data[o+3]=Math.min(235, 30+v*225);
+// ---------- SVG contour heatmap ----------
+// Rink coords are metres (rx 0..60, ry 0..30, ry up); the <g> groups carry
+// transform="translate(0 30) scale(1 -1)" so a path drawn in metres lands right.
+const LEVELS = [0.06, 0.12, 0.20, 0.30, 0.43, 0.58, 0.75, 0.92];
+
+function buildRinkLines(){
+  const g=$("#lines"); if (!g) return;
+  const el=[];
+  el.push(`<rect class="board" x="0" y="0" width="60" height="30" rx="2"/>`);
+  [22.5,37.5].forEach(x=> el.push(`<line class="blue" x1="${x}" y1="0" x2="${x}" y2="30"/>`));
+  [4,30,56].forEach(x=> el.push(`<line class="red" x1="${x}" y1="0" x2="${x}" y2="30"/>`));
+  el.push(`<circle class="blue" cx="30" cy="15" r="4.5"/>`);
+  [[10,7],[10,23],[50,7],[50,23]].forEach(([x,y])=> el.push(`<circle class="red" cx="${x}" cy="${y}" r="4.5"/>`));
+  [[30,15],[10,7],[10,23],[50,7],[50,23]].forEach(([x,y])=> el.push(`<circle class="dot" cx="${x}" cy="${y}" r="0.3"/>`));
+  g.innerHTML=el.join("");
+}
+
+// one <path d> (multiple M..Z subpaths) tracing data==level, via marching squares
+function contourPath(data, nx, ny, level){
+  const w=nx+2, h=ny+2, f=new Float64Array(w*h);          // zero-pad -> closed loops
+  for (let y=0;y<ny;y++) for (let x=0;x<nx;x++) f[(y+1)*w+(x+1)] = data[y*nx+x];
+  const X = px => (px-0.5)/nx*60, Y = py => (py-0.5)/ny*30;
+  const t = (a,b)=>{ const d=b-a; return Math.max(0,Math.min(1, Math.abs(d)<1e-9 ? 0.5 : (level-a)/d)); };
+  const key = (x,y)=> Math.round(x*1000)+"_"+Math.round(y*1000);
+  const segs=[], inc=new Map();
+  const add=(p,q)=>{ const s={a:p,b:q,u:false}; segs.push(s);
+    for (const e of [p,q]){ const k=key(e[0],e[1]); (inc.get(k)||inc.set(k,[]).get(k)).push(s); } };
+
+  for (let y=0;y<h-1;y++) for (let x=0;x<w-1;x++){
+    const TL=f[y*w+x], TR=f[y*w+x+1], BR=f[(y+1)*w+x+1], BL=f[(y+1)*w+x];
+    const ci=(TL>level?1:0)|(TR>level?2:0)|(BR>level?4:0)|(BL>level?8:0);
+    if (ci===0 || ci===15) continue;
+    const top    = [X(x + t(TL,TR)), Y(y)];
+    const right  = [X(x+1),          Y(y + t(TR,BR))];
+    const bottom = [X(x + t(BL,BR)), Y(y+1)];
+    const left   = [X(x),            Y(y + t(TL,BL))];
+    switch (ci){
+      case 1: case 14: add(left, top); break;
+      case 2: case 13: add(top, right); break;
+      case 3: case 12: add(left, right); break;
+      case 4: case 11: add(right, bottom); break;
+      case 6: case 9:  add(top, bottom); break;
+      case 7: case 8:  add(left, bottom); break;
+      case 5:  ((TL+TR+BR+BL)/4 > level) ? (add(left,top), add(right,bottom))
+                                         : (add(left,bottom), add(top,right)); break;
+      case 10: ((TL+TR+BR+BL)/4 > level) ? (add(left,bottom), add(top,right))
+                                         : (add(left,top), add(right,bottom)); break;
+    }
   }
-  ctx.putImageData(img,0,0);
-  strokeRink(ctx,W,H);
+  let d="";
+  for (const s0 of segs){
+    if (s0.u) continue;
+    s0.u=true;
+    const ring=[s0.a, s0.b];
+    for (let guard=0; guard<segs.length; guard++){
+      const tail=ring[ring.length-1], k=key(tail[0],tail[1]);
+      const nb=(inc.get(k)||[]).find(s=>!s.u);
+      if (!nb) break;
+      nb.u=true;
+      const nextPt = key(nb.a[0],nb.a[1])===k ? nb.b : nb.a;
+      ring.push(nextPt);
+      if (key(nextPt[0],nextPt[1])===key(ring[0][0],ring[0][1])) break;
+    }
+    if (ring.length>2)
+      d += "M"+ring.map(p=>p[0].toFixed(2)+" "+p[1].toFixed(2)).join("L")+"Z";
+  }
+  return d;
 }
-function clearRink(){ const c=$("#rink"),x=c.getContext("2d"); x.fillStyle="#0b0b12"; x.fillRect(0,0,c.width,c.height); strokeRink(x,c.width,c.height); }
-function strokeRink(ctx,W,H){
-  const X=m=>m/60*W, Y=m=>H-m/30*H;
-  ctx.strokeStyle="rgba(255,255,255,.5)"; ctx.lineWidth=1;
-  ctx.strokeRect(X(0)+1,Y(30)+1,W-2,H-2);
-  ctx.strokeStyle="rgba(120,170,255,.8)";
-  [22.5,37.5].forEach(x=>{ ctx.beginPath(); ctx.moveTo(X(x),Y(0)); ctx.lineTo(X(x),Y(30)); ctx.stroke(); });
-  ctx.strokeStyle="rgba(255,90,90,.8)";
-  [4,30,56].forEach(x=>{ ctx.beginPath(); ctx.moveTo(X(x),Y(0)); ctx.lineTo(X(x),Y(30)); ctx.stroke(); });
-  ctx.beginPath(); ctx.arc(X(30),Y(15),4.5/30*H,0,7); ctx.stroke();
-  [[10,7],[10,23],[50,7],[50,23]].forEach(([x,y])=>{ ctx.beginPath(); ctx.arc(X(x),Y(y),4.5/30*H,0,7); ctx.stroke(); });
+
+function paint(G){
+  const heat=$("#heat"); if (!heat) return;
+  let svg="";
+  for (const lv of LEVELS){
+    const d=contourPath(G.data, G.nx, G.ny, lv*G.max);
+    if (!d) continue;
+    const [r,g,b]=inferno(lv);
+    svg += `<path d="${d}" fill="rgb(${r|0},${g|0},${b|0})" fill-opacity="${(0.32+0.6*lv).toFixed(3)}"/>`;
+  }
+  heat.innerHTML = svg;
 }
+function clearRink(){ const h=$("#heat"); if (h) h.innerHTML=""; }
 
 // footer
 window.addEventListener("load",()=>{ setTimeout(()=>{ $("#meta").textContent =
