@@ -74,7 +74,9 @@ game dir**.
 | `identity/number_votes.csv` | `track_id → jersey number` map (once §6 of the notebook is done) — enables **player-level** track/asset filtering | ✅ |
 | `homography/H_*.json` | pixel→metre homography matrix, window, RMS | ✅ |
 | `homography/H_*.npy` | Same matrix, NumPy binary | ⚪ optional (`.json` is the web copy) |
-| `heatmaps/*.png` | Rendered positional heatmaps (all / per team) | ✅ |
+| `heatmaps/*.png` | Rendered positional heatmaps — preview only | ✅ |
+| `heatmaps/*.grid.json` | Heatmap **as data**: pre-binned 120×60 density (`nx,ny,max,grid[]`). `game_*` = whole game, `p{1,2,3}_full_*` = per period, each × `{all,lhc,hcap}`. The site draws these as SVG marching-squares contour `<path>`s. | ✅ |
+| `heatmaps/*_points.csv` | Filterable rink-point cloud (`t_s,period,team,number,name,rx,ry`) — binned client-side when a filter has no pre-baked grid | ✅ |
 | `frames/*.jpg` | Keyframe stills + calibration overlays | ✅ |
 | `htrack/*.jpg` | Homography-tracking anchor / overlay stills | ✅ |
 | `rink/*.{jpg,png}` | Rink-line / ice-mask detection debug | ✅ (trim candidate) |
@@ -573,6 +575,17 @@ function eventVisible(row, sel, periods) {
 The heatmap / frame galleries reuse the same `sel` — filter their asset
 lists by `periodOfSeconds(...)` and (when identity exists) by player — so
 picking a period or player narrows tables and figures together.
+
+**Heatmap rendering.** The rink and the heat share one
+`<svg viewBox="0 0 60 30">` (rink metres). Source is picked in priority
+order: a player → bin `*_points.csv` live; a period → pre-baked
+`p{N}_full_{team}.grid.json` (fall back to binning points); otherwise the
+whole-game `game_{team}.grid.json`. The chosen 120×60 field is drawn as
+~8 nested contour bands — hand-rolled marching squares → one
+`<path fill-rule="evenodd">` per level, inferno ramp, no library. Rink
+lines are `<line>`/`<circle>`/`<rect>` with `vector-effect:non-scaling-stroke`.
+Per-*player* heat needs `identity/number_votes.csv`; without it the note
+says so and the rink draws empty.
 
 ---
 
