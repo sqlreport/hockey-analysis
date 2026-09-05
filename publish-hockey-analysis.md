@@ -441,6 +441,15 @@ want CI to publish exactly what was committed.
 **One-time:** repo **Settings → Pages → Build and deployment → Source:
 GitHub Actions**.
 
+Important: the `github-pages` environment is protected by the repository's branch
+policy. In practice, the deploy job must run from `main` unless you explicitly
+allow a different branch in the environment protection rules. If you try to
+publish from a feature branch like `add-site`, the deploy job will be rejected.
+
+Also note: if `out/` has not been generated yet, the publish script now creates an
+empty `site/data/games.json` instead of failing, so the site still deploys cleanly
+while data is absent.
+
 ---
 
 ## 5. Local preview

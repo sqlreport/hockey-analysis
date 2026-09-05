@@ -40,6 +40,16 @@ point cloud client-side on the same `sel`.
 ## Deploy
 
 Settings → Pages → Source: **GitHub Actions**. `pages.yml` runs `publish_out.sh`
-on every push, so `site/data/` is regenerated in CI (Model B). To serve without
-CI, commit `site/data/` and drop the `Stage` step (Model A). Video is never
-published — `publish_out.sh` aborts if any `*.mp4`/`*.mkv` reaches `site/data/`.
+on pushes to `main`, so `site/data/` is regenerated in CI (Model B). To serve
+without CI, commit `site/data/` and drop the `Stage` step (Model A). Video is
+never published — `publish_out.sh` aborts if any `*.mp4`/`*.mkv` reaches
+`site/data/`.
+
+> GitHub Pages deploys to the `github-pages` environment, which enforces the
+> branch policy configured in the repository. If the workflow targets a feature
+> branch, deployment will be rejected unless that branch is explicitly allowed in
+> the environment protection rules. For a normal static site, deploy from `main`.
+
+If `out/games` is not present yet, the script now publishes an empty manifest
+instead of failing, which keeps the Pages workflow green while no game export
+exists.
