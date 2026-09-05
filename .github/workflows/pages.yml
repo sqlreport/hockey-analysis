@@ -1,0 +1,46 @@
+name: Publish analysis site
+on:
+  push:
+    branches: [main]
+    paths:
+      - "out/**"
+      - "site/**"
+      - "scripts/publish_out.sh"
+      - "scripts/gen_manifest.py"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true              # only needed under Model B with LFS-backed out/
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Stage out/ into site/data (exclude video) + manifest
+        run: bash scripts/publish_out.sh
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
