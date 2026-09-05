@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hockey analysis</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Hockey analysis</h1>
+  <label>Game
+    <select id="game"></select>
+  </label>
+  <span id="score" class="score"></span>
+</header>
+
+<nav id="controls">
+  <label>Period <select id="period"></select></label>
+  <label>Team <select id="team"></select></label>
+  <label>Player <select id="player"></select></label>
+  <fieldset id="types"><legend>Events</legend></fieldset>
+</nav>
+
+<main>
+  <section id="viz">
+    <h2>Positional heatmap <small id="hmnote"></small></h2>
+    <canvas id="rink" width="720" height="360"></canvas>
+    <p class="hint">rink is 60 &times; 30 m; colour = seconds a skater occupied each 0.5 m cell,
+      binned from <code>heatmaps/*.grid.json</code> (or <code>*_points.csv</code> for a single player)</p>
+    <div id="units"></div>
+  </section>
+
+  <section id="table">
+    <h2>Events <small id="evcount"></small></h2>
+    <table id="events"><thead><tr>
+      <th>P</th><th>clock</th><th>team</th><th>type</th><th>detail</th><th>state</th>
+    </tr></thead><tbody></tbody></table>
+  </section>
+</main>
+
+<footer id="meta"></footer>
+<script src="app.js"></script>
+</body>
+</html>
