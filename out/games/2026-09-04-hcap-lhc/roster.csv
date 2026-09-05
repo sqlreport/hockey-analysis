@@ -1,0 +1,41 @@
+team,number,name,pos,flag
+HCAP,1,Glatthard Janis,G,
+HCAP,7,Andreazzi Tewodros,LD,
+HCAP,11,Bernasconi Patrick,RW,
+HCAP,12,Sacchi Enea,RW,
+HCAP,13,Leonardi Yanick,C,
+HCAP,17,Aktas Davide,RW,
+HCAP,18,Aktas Filippo,LW,C
+HCAP,21,Bottoli Saul,C,
+HCAP,25,Puur Elliot,LD,
+HCAP,27,Borradori Nicolo,RD,
+HCAP,28,Gianini Samuel,RD,
+HCAP,34,Nussbaumer Jayden,RD,
+HCAP,43,Bracchi Diego,LD,
+HCAP,44,Torchio Luca,RW,E
+HCAP,71,Puur Melvin,LW,
+HCAP,74,Zengaffinen Lars,G,1st
+HCAP,81,Baldassari Leonard,LW,
+HCAP,86,Bottoli Diego,C,
+HCAP,94,Walker Valentin,LW,
+LHC,10,Baaij Luca,RW,
+LHC,11,Türler Louis,LW,
+LHC,14,Timba Bema Ewane,LD,C
+LHC,15,Cavallet Maxime,LD,
+LHC,19,Gabus Eliott,RD,
+LHC,24,Egger Donovan,C,
+LHC,25,Wymann Louis,LW,
+LHC,29,Cordero Alexey,LD,
+LHC,34,Hajdu Erik,C,E
+LHC,51,Huet Ayden,G,1st
+LHC,53,Schwarz Adam,RD,E
+LHC,61,Burkart Elias,RD,
+LHC,68,Terraz Jules Igihozo,C,
+LHC,72,Wand Nolan,LW,
+LHC,74,Brossard Thomas,G,
+LHC,75,Thurler Ilhan,C,
+LHC,76,Lee Moses,RW,
+LHC,77,Davidsson Alexander,LD,E
+LHC,86,Bashkirov Mark,RW,E
+LHC,91,Urnev Illia,RW,
+LHC,97,Moyon Edouard,LW,E

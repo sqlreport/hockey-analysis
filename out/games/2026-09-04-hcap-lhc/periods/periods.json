@@ -1,0 +1,35 @@
+{
+  "video": "VID_20260904_165838_01_01.mp4",
+  "periods": [
+    {
+      "period": 1,
+      "vid_start": 0,
+      "vid_end": 1882,
+      "wall_offset": 61118,
+      "n_samples": 25,
+      "dur_min": 31.4,
+      "wall_start": "16:58:38",
+      "wall_end": "17:30:00"
+    },
+    {
+      "period": 2,
+      "vid_start": 1882,
+      "vid_end": 3379,
+      "wall_offset": 62059,
+      "n_samples": 19,
+      "dur_min": 24.9,
+      "wall_start": "17:45:41",
+      "wall_end": "18:10:38"
+    },
+    {
+      "period": 3,
+      "vid_start": 3379,
+      "vid_end": 5460,
+      "wall_offset": 62978,
+      "n_samples": 28,
+      "dur_min": 34.7,
+      "wall_start": "18:25:57",
+      "wall_end": "19:00:38"
+    }
+  ]
+}
