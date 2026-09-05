@@ -1,0 +1,101 @@
+{
+  "HCAP": {
+    "forward_units": [
+      {
+        "members": [
+          11,
+          71,
+          86
+        ],
+        "names": [
+          "Bernasconi Patrick",
+          "Puur Melvin",
+          "Bottoli Diego"
+        ],
+        "support_frames": 155,
+        "paper_unit": "L1",
+        "match": "full"
+      },
+      {
+        "members": [
+          17,
+          21,
+          81
+        ],
+        "names": [
+          "Aktas Davide",
+          "Bottoli Saul",
+          "Baldassari Leonard"
+        ],
+        "support_frames": 133,
+        "paper_unit": "L3",
+        "match": "full"
+      },
+      {
+        "members": [
+          13,
+          18,
+          44
+        ],
+        "names": [
+          "Leonardi Yanick",
+          "Aktas Filippo",
+          "Torchio Luca"
+        ],
+        "support_frames": 21,
+        "paper_unit": "L2",
+        "match": "full"
+      }
+    ],
+    "defence_pairs": []
+  },
+  "LHC": {
+    "forward_units": [
+      {
+        "members": [
+          10,
+          24,
+          25
+        ],
+        "names": [
+          "Baaij Luca",
+          "Egger Donovan",
+          "Wymann Louis"
+        ],
+        "support_frames": 274,
+        "paper_unit": "L3",
+        "match": "full"
+      },
+      {
+        "members": [
+          34,
+          76,
+          97
+        ],
+        "names": [
+          "Hajdu Erik",
+          "Lee Moses",
+          "Moyon Edouard"
+        ],
+        "support_frames": 105,
+        "paper_unit": "L4",
+        "match": "partial"
+      }
+    ],
+    "defence_pairs": [
+      {
+        "members": [
+          19,
+          53
+        ],
+        "names": [
+          "Gabus Eliott",
+          "Schwarz Adam"
+        ],
+        "support_frames": 52,
+        "paper_unit": "D2",
+        "match": "juggle"
+      }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+period,game_clock,team,type,player,minutes,infraction,state,score,scorer,assists
+1,05:31,HCAP,penalty,Sacchi Enea,2.0,Haken,,,,
+1,07:01,LHC,penalty,Davidsson Alexander,2.0,Behinderung,,,,
+1,14:43,LHC,goal,,,,EQ,1:0,Hajdu Erik,['Wand Nolan']
+2,37:01,LHC,goal,,,,"EQ,GWG",2:0,Lee Moses,"['Moyon Edouard', 'Cordero Alexey']"
+2,38:15,HCAP,penalty,Gianini Samuel,2.0,Beinstellen,,,,
+3,46:12,LHC,penalty,Cavallet Maxime,2.0,Beinstellen,,,,
+3,47:10,HCAP,goal,,,,PP1,2:1,Puur Elliot,['Bottoli Diego']
+3,49:44,LHC,goal,,,,EQ,3:1,Thurler Ilhan,"['Burkart Elias', 'Wand Nolan']"
+3,54:13,LHC,penalty,Davidsson Alexander,2.0,Behinderung,,,,
+3,56:45,LHC,goal,,,,"EQ,EN",4:1,Timba Bema Ewane,['Wand Nolan']
+3,60:00,LHC,penalty,Gabus Eliott,2.0,Cross-Check,,,,
