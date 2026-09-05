@@ -48,14 +48,29 @@ function writeUrl(){
   readUrl();
   const idx = await (await fetch(`${DATA}/games.json`)).json();
   const g=$("#game");
-  idx.games.forEach(x=>{ const o=document.createElement("option"); o.value=x.dir; o.textContent=x.label; g.append(o); });
-  g.value = sel.game && idx.games.some(x=>x.dir===sel.game) ? sel.game : idx.games[0].dir;
+  const games = idx.games || [];
+
+  if (!games.length){
+    g.innerHTML = '<option value="">No games available</option>';
+    g.disabled = true;
+    $("#score").textContent = "No game data";
+    $("#evcount").textContent = "(0/0)";
+    clearRink();
+    return;
+  }
+
+  games.forEach(x=>{ const o=document.createElement("option"); o.value=x.dir; o.textContent=x.label; g.append(o); });
+  g.value = sel.game && games.some(x=>x.dir===sel.game) ? sel.game : games[0].dir;
   g.onchange = ()=>{ sel.game=g.value; sel.player=""; POINTS=null; loadGame(); };
   await loadGame();
 })();
 
 async function loadGame(){
-  sel.game = $("#game").value;
+  const g=$("#game");
+  if (!g || g.disabled || !g.value){
+    GAME = null; EVENTS = []; $("#score").textContent = "No game data"; return;
+  }
+  sel.game = g.value;
   GAME  = await (await fetch(`${DATA}/${sel.game}/game.json`)).json();
   EVENTS = csv(await (await fetch(`${DATA}/${sel.game}/events.csv`)).text());
   $("#score").textContent = GAME.score ? `${GAME.away} ${GAME.score} ${GAME.home}` : "";

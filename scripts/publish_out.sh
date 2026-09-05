@@ -10,8 +10,31 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="${1:-$REPO_ROOT/out/games}"
 DEST="${2:-$REPO_ROOT/site/data}"
 
-[ -d "$SRC" ] || { echo "no such dir: $SRC" >&2; exit 1; }
 mkdir -p "$DEST"
+
+# If the source tree is empty or not present yet, still publish a valid empty
+# manifest so the Pages workflow can deploy the static site without failing.
+if [ ! -d "$SRC" ]; then
+  echo "source dir missing: $SRC; publishing empty data index"
+  python3 - "$DEST" <<'PY'
+import json, sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+dest = Path(sys.argv[1]).resolve()
+dest.mkdir(parents=True, exist_ok=True)
+index = {
+    "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "sourceCommit": None,
+    "gameCount": 0,
+    "games": [],
+}
+(dest / "games.json").write_text(json.dumps(index, indent=2))
+(dest.parent / ".nojekyll").touch(exist_ok=True)
+print(f"published empty index -> {dest}")
+PY
+  exit 0
+fi
 
 # 1. Mirror, excluding video (and anything else non-web you add here).
 rsync -a --delete --prune-empty-dirs \
